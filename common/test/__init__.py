@@ -4,10 +4,6 @@ import yaml
 import importlib
 import http.client
 
-from kidu.models import db
-from kidu import app
-from tasks.create_db import create_db
-
 from operator import itemgetter
 from flask.json import dumps
 from flask.testing import FlaskClient
@@ -73,31 +69,31 @@ class TestingResponse(Response):
         return json.loads(self.data.decode('utf-8'))
 
 
-assert app.response_class == Response, 'The default response class appears to have changed'
-
-# Configure app for testing
-app.testing = True
-app.response_class = TestingResponse
-app.test_client_class = TestingClient
-
-
-class BaseTestCase(unittest.TestCase):
+class BaseFlaskTestCase(unittest.TestCase):
     """
-    Base class for unit tests that does the following:
-    - Reset the test database before every test.
-    - Manage the Flask request context.
-    - Load fixture data.
+    Base class for Flask and SQLAlchemy tests. This class resets the test database and populates it with any
+    fixture data before every test. It also managed the Flask request context and the associated SQLAlchemy
+    session to mimic the handling of an actual request.
     """
 
     def setUp(self):
         """
-        Reset the test database, set up a Flask request context and load fixture data.
+        Configure the Flask app for testing, setup a Flask request context, reset the test database, and
+        load fixture data.
         """
 
-        self.context = app.test_request_context()
+        assert hasattr(self, 'app'), 'Please provide a reference to the Flask app'
+        assert hasattr(self, 'db'), 'Please provide a reference to the Flask SQLAlchemy object'
+
+        # Configure app for testing
+        self.app.testing = True
+        self.app.response_class = TestingResponse
+        self.app.test_client_class = TestingClient
+
+        self.context = self.app.test_request_context()
         self.context.push()
 
-        self.client = app.test_client()
+        self.client = self.app.test_client()
 
         self.create_schema()
         self.load_fixtures()
@@ -108,8 +104,9 @@ class BaseTestCase(unittest.TestCase):
         """
 
         # Sanity check before blowing everything away
-        assert 'test' in app.config['SQLALCHEMY_DATABASE_URI'], 'You do not appear to be pointing to a test database'
-        create_db()
+        assert 'test' in self.app.config['SQLALCHEMY_DATABASE_URI'], 'You do not appear to be pointing to a test database'
+        self.db.drop_all()
+        self.db.create_all()
 
     def load_fixtures(self):
         """
@@ -143,8 +140,8 @@ class BaseTestCase(unittest.TestCase):
                     module = importlib.import_module(module_name)
                     model = getattr(module, class_name)
                     for fields in fixture['records']:
-                        db.session.add(model(**fields))
-            db.session.commit()
+                        self.db.session.add(model(**fields))
+            self.db.session.commit()
 
     def tearDown(self):
         """
@@ -156,7 +153,7 @@ class BaseTestCase(unittest.TestCase):
         # Need to manually rollback the transaction because, of course, Flask does not do this
         # automatically (on error or any other reason). Flask manages the session but has no opinion on
         # transaction handling.
-        db.session.rollback()
+        self.db.session.rollback()
         self.context.pop()
 
     def assertEntitiesContain(self, actual_entities, expected_entities):
