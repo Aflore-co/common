@@ -1,0 +1,9 @@
+.idea/
+.DS_Store
+*.pyc
+*.egg-info
+*.swp
+tags
+*~
+.cache
+venv
