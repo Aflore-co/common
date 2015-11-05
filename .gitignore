@@ -7,3 +7,5 @@ tags
 *~
 .cache
 venv
+build
+dist
