@@ -4,8 +4,10 @@ import yaml
 import importlib
 import http.client
 
+from os import path
 from operator import itemgetter
 from flask.json import dumps
+from flask.logging import create_logger
 from flask.testing import FlaskClient
 from flask.wrappers import Response
 from contextlib import wraps
@@ -85,6 +87,8 @@ class BaseFlaskTestCase(unittest.TestCase):
         assert hasattr(self, 'app'), 'Please provide a reference to the Flask app'
         assert hasattr(self, 'db'), 'Please provide a reference to the Flask SQLAlchemy object'
 
+        self.logger = create_logger(self.app)
+
         # Configure app for testing
         self.app.testing = True
         self.app.response_class = TestingResponse
@@ -114,7 +118,11 @@ class BaseFlaskTestCase(unittest.TestCase):
 
             fixtures = ['path/to/fixtures.yaml']
 
-        The path should be relative to the Flask app. The fixtures YAML should look like this:
+        The fixture path should be relative to the Flask app. The best way to describe it is as being
+        similar in structure to the path used to import a regular Python module in your application: it should
+        have the same root and the same elements, but use slashes instead of periods as delimiters.
+
+         The fixtures YAML should look like this:
 
             - model: fully.qualified.ModelName
               records:
@@ -132,7 +140,9 @@ class BaseFlaskTestCase(unittest.TestCase):
         which sadly does not support Python 3.)
         """
 
-        for fixture_path in getattr(self, 'fixtures', []):
+        for fixture in getattr(self, 'fixtures', []):
+            fixture_path = path.join(path.dirname(self.app.root_path), fixture)
+            self.logger.debug('Loading fixture: %s', fixture_path)
             with open(fixture_path) as f:
                 fixtures = yaml.load(f.read())
                 for fixture in fixtures:
