@@ -1,13 +1,13 @@
 import unittest
 import json
 import yaml
+import logging
 import importlib
 import http.client
 
 from os import path
 from operator import itemgetter
 from flask.json import dumps
-from flask.logging import create_logger
 from flask.testing import FlaskClient
 from flask.wrappers import Response
 from contextlib import wraps
@@ -87,7 +87,7 @@ class BaseFlaskTestCase(unittest.TestCase):
         assert hasattr(self, 'app'), 'Please provide a reference to the Flask app'
         assert hasattr(self, 'db'), 'Please provide a reference to the Flask SQLAlchemy object'
 
-        self.logger = create_logger(self.app)
+        self.logger = logging.getLogger(self.__class__.__name__)
 
         # Configure app for testing
         self.app.testing = True
@@ -160,10 +160,9 @@ class BaseFlaskTestCase(unittest.TestCase):
         up the SQLAlchemy session.
         """
 
-        # Need to manually rollback the transaction because, of course, Flask does not do this
-        # automatically (on error or any other reason). Flask manages the session but has no opinion on
-        # transaction handling.
-        self.db.session.rollback()
+        # Tearing down all sessions seems drastic, but simply rolling back the current transaction does not
+        # terminate all database connections, which can cause the tests to hang.
+        self.db.session.close_all()
         self.context.pop()
 
     def assertEntitiesContain(self, actual_entities, expected_entities):
