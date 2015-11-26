@@ -1,14 +1,19 @@
 from setuptools import setup
 
 setup(name='common',
-      version='0.1.1',
+      version='0.1.2',
       author='Unascribed',
       author_email='tech@polymathventures.co',
       description='Code intended to be used across Polymath Ventures repositories.',
       license='BSD',
       url='https://github.com/PolymathVentures/common',
-      packages=['common', 'common.test'],
-      install_requires=['PyYAML>=3.11', 'Flask>=0.10.1', 'Flask-SQLAlchemy>=2.0'],
+      packages=['common',
+                'common.test',
+                'common.utils'],
+      install_requires=['PyYAML>=3.11',
+                        'Flask>=0.10.1',
+                        'Flask-SQLAlchemy>=2.0',
+                        'pytz>=2015.4'],
       classifiers=[
           'Development Status :: 3 - Alpha',
           'Topic :: Utilities',
