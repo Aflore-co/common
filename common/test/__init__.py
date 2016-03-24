@@ -160,6 +160,14 @@ class BaseFlaskTestCase(unittest.TestCase):
         up the SQLAlchemy session.
         """
 
+        # Flushing leftover SQL to the database at the end of every test catches bugs that manifest themselves only
+        # at the database level, such as constraint violations or model attributes with values that cannot be
+        # represented in SQL but are perfectly fine in Python. SQLAlchemy has its own heuristics governing when to
+        # flush, such as before issuing any queries, but there is no guarantee it happens after every test so we do
+        # it here. Committing the session also forces a flush but is a heavier operation.
+        self.db.session.flush()
+        self.db.session.rollback()
+
         # Tearing down all sessions seems drastic, but simply rolling back the current transaction does not
         # terminate all database connections, which can cause the tests to hang.
         self.db.session.close_all()
