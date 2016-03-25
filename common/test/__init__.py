@@ -165,13 +165,15 @@ class BaseFlaskTestCase(unittest.TestCase):
         # represented in SQL but are perfectly fine in Python. SQLAlchemy has its own heuristics governing when to
         # flush, such as before issuing any queries, but there is no guarantee it happens after every test so we do
         # it here. Committing the session also forces a flush but is a heavier operation.
-        self.db.session.flush()
-        self.db.session.rollback()
+        try:
+            self.db.session.flush()
+        finally:
+            self.db.session.rollback()
 
-        # Tearing down all sessions seems drastic, but simply rolling back the current transaction does not
-        # terminate all database connections, which can cause the tests to hang.
-        self.db.session.close_all()
-        self.context.pop()
+            # Tearing down all sessions seems drastic, but simply rolling back the current transaction does not
+            # terminate all database connections, which can cause the tests to hang.
+            self.db.session.close_all()
+            self.context.pop()
 
     def assertEntitiesContain(self, actual_entities, expected_entities):
         """
