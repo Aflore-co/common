@@ -142,7 +142,7 @@ class BaseFlaskTestCase(unittest.TestCase):
 
         for fixture in getattr(self, 'fixtures', []):
             fixture_path = path.join(path.dirname(self.app.root_path), fixture)
-            self.logger.debug('Loading fixture: %s', fixture_path)
+            self.logger.info('Loading fixture: %s', fixture_path)
             with open(fixture_path) as f:
                 fixtures = yaml.load(f.read())
                 for fixture in fixtures:
