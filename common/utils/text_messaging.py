@@ -13,9 +13,7 @@ def send_message(username, password, payload):
     Message (text, required) will be normalized for compatibility with network providers
     Returns the decoded Infobip response
     """
-
-    assert payload.get('from') and payload.get('to') and payload.get('text')
-
+    
     #Normalize message string for compatibility
     payload['messages']['text'] = unidecode(payload['messages']['text'])
 
