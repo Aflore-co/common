@@ -17,9 +17,9 @@ def send_message(username, password, payload):
     assert payload.get('from') and payload.get('to') and payload.get('text')
 
     #Normalize message string for compatibility
-    payload['text'] = unidecode(payload['text'])
+    payload['messages']['text'] = unidecode(payload['messages']['text'])
 
-    url = "https://api.infobip.com/sms/1/text/single"
+    url = "https://api.infobip.com/sms/1/text/advanced"
     response = requests.post(url, json=payload, auth=HTTPBasicAuth(username.strip(), password.strip()))
 
     return response.json()
