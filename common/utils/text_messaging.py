@@ -13,9 +13,10 @@ def send_message(username, password, payload):
     Message (text, required) will be normalized for compatibility with network providers
     Returns the decoded Infobip response
     """
-    
+
     #Normalize message string for compatibility
-    payload['messages']['text'] = unidecode(payload['messages']['text'])
+    for message in payload['messages']:
+        message['text'] = unidecode(message['text'])
 
     url = "https://api.infobip.com/sms/1/text/advanced"
     response = requests.post(url, json=payload, auth=HTTPBasicAuth(username.strip(), password.strip()))
