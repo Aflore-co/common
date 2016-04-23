@@ -16,7 +16,7 @@ the URL above to enable password-free installation.
 
 ## Dependencies
 
-Note that common does add some dependencies to your project. They are listed in the [setup.py file](setup.py#L12-L15).
+Note that common does add some dependencies to your project. They are listed in the [setup.py file](setup.py#L12-L17).
 Be mindful about adding new ones as they will have to be installed in all projects using common.
 
 Since this is a library intended for use in other apps, the way dependencies work is a bit different. There is no
