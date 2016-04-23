@@ -14,7 +14,7 @@ def send_message(username, password, payload):
     Returns the decoded Infobip response
     """
 
-    #Normalize message string for compatibility
+    #  Remove unicode characters from message string for compatibility
     for message in payload['messages']:
         message['text'] = unidecode(message['text'])
 
