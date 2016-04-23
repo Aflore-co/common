@@ -4,6 +4,10 @@ machine:
     version:
       3.4.3
 
+dependencies:
+  override:
+    - python setup.py install
+
 test:
   override:
     - python setup.py test
