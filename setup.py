@@ -13,6 +13,7 @@ setup(name='common',
                         'Flask>=0.10.1',
                         'Flask-SQLAlchemy>=2.0',
                         'pytz>=2015.4'],
+      test_suite='common.common_tests',
       classifiers=['Development Status :: 3 - Alpha',
                    'Topic :: Utilities',
                    'License :: OSI Approved :: BSD License'])

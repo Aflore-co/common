@@ -16,7 +16,7 @@ the URL above to enable password-free installation.
 
 ## Dependencies
 
-Note that common does add some dependencies to your project. They are listed in the [setup.py file](setup.py#L13-L16).
+Note that common does add some dependencies to your project. They are listed in the [setup.py file](setup.py#L12-L15).
 Be mindful about adding new ones as they will have to be installed in all projects using common.
 
 Since this is a library intended for use in other apps, the way dependencies work is a bit different. There is no
@@ -34,7 +34,7 @@ section of the Python Packaging User Guide to learn more.
 To install into an existing virtual environment, such as when testing new common code in your app, the easiest way to do
 it to [install from a local source tree](https://python-packaging-user-guide.readthedocs.org/en/latest/installing/#installing-from-a-local-src-tree):
 
-    pip install -e /path/to/common/on/your/system
+    $ pip install -e /path/to/common/on/your/system
 
 This creates a link to common in your virtual environment:
 
@@ -45,13 +45,13 @@ Any changes in common will be reflected immediately in your virtual environment.
 
 To remove the link and uninstall common:
 
-    pip uninstall common
+    $ pip uninstall common
 
 If you want to actually install common into your virtual environment instead of linking to it, do this *while in your
 app's virtual environment*:
 
-    cd /path/to/common/on/your/system
-    python setup.py install
+    $ cd /path/to/common/on/your/system
+    $ python setup.py install
 
 If you go this route instead of the link it can sometimes be difficult to know if you have installed a version of
 common with your latest changes. To be sure, either bump the version in `setup.py` or uninstall common before running
@@ -62,5 +62,7 @@ common with your latest changes. To be sure, either bump the version in `setup.p
 When you wish to publish a new version of common, bump the version number in `setup.py` and push a new tag that matches
 that version:
 
-    git tag 0.1.3
-    git push origin --tags
+    $ grep version setup.py
+    version='0.1.5',
+    $ git tag 0.1.5
+    $ git push origin --tags

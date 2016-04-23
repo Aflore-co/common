@@ -1,0 +1,9 @@
+machine:
+
+  python:
+    version:
+      3.4.3
+
+test:
+  override:
+    - python setup.py test
