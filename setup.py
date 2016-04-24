@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='common',
-      version='0.1.6',
+      version='0.1.7',
       author='Unascribed',
       author_email='tech@polymathventures.co',
       description='Code intended to be used across Polymath Ventures repositories.',
