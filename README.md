@@ -1,3 +1,6 @@
+Build status: [![Circle CI](https://circleci.com/gh/PolymathVentures/common.svg?style=svg)](https://circleci.com/gh/PolymathVentures/common)
+
+
 ## Overview
 
 This repository is for Python code intended to be shared across projects. Good things to put here are general utility
