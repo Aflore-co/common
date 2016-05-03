@@ -60,6 +60,10 @@ If you go this route instead of the link it can sometimes be difficult to know i
 common with your latest changes. To be sure, either bump the version in `setup.py` or uninstall common before running
 `python setup.py install`.
 
+To run the tests:
+    
+    $ python setup.py test
+
 ## Release
 
 When you wish to publish a new version of common, bump the version number in `setup.py` and push a new tag that matches
