@@ -6,7 +6,6 @@ import importlib
 import http.client
 
 from os import path
-from operator import itemgetter
 from flask.json import dumps
 from flask.testing import FlaskClient
 from flask.wrappers import Response
@@ -42,18 +41,36 @@ class TestingClient(FlaskClient):
         self.trace_ok = assert_response_ok(self.trace)
         self.options_ok = assert_response_ok(self.options)
 
-    def post_json_ok(self, url, payload):
+    def post_json(self, url, payload):
         """
         Send a POST request with JSON content in the body.
+        """
+
+        return self.post(url,
+                         content_type='application/json',
+                         data=dumps(payload, indent=2))
+
+    def post_json_ok(self, url, payload):
+        """
+        Send a POST request with JSON content in the body and verify that HTTP 200 comes back.
         """
 
         return self.post_ok(url,
                             content_type='application/json',
                             data=dumps(payload, indent=2))
 
-    def put_json_ok(self, url, payload):
+    def put_json(self, url, payload):
         """
         Send a PUT request with JSON content in the body.
+        """
+
+        return self.put(url,
+                        content_type='application/json',
+                        data=dumps(payload, indent=2))
+
+    def put_json_ok(self, url, payload):
+        """
+        Send a PUT request with JSON content in the body and verify that HTTP 200 comes back.
         """
 
         return self.put_ok(url,
