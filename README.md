@@ -1,5 +1,6 @@
-Build status: [![Circle CI](https://circleci.com/gh/PolymathVentures/common.svg?style=svg)](https://circleci.com/gh/PolymathVentures/common)
+## Build status 
 
+[![Circle CI](https://circleci.com/gh/PolymathVentures/common.svg?style=svg)](https://circleci.com/gh/PolymathVentures/common)
 
 ## Overview
 
