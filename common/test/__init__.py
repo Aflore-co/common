@@ -194,12 +194,11 @@ class BaseFlaskTestCase(unittest.TestCase):
             if not set(actual.items()).issuperset(set(expected.items())):
                 self.fail('Actual does not have everything expected: {actual}, {expected}'.format(actual=actual,
                                                                                                   expected=expected))
-
     def canonicalRepr(self, payload):
         """
-        Canonicalize a payload intended to be consumed by Ember's Rest Adapter by sorting the lists. This enables
-        payloads to be compared with == and leverages pytest's magic introspection.
+        Canonicalize a JSON payload intended to be consumed by Ember Data's Rest or JSONAPI adaptors by sorting
+        top-level lists. This enables comparison of responses with == and leverages pytest's magic introspection.
         """
 
-        return {key: sorted(value, key=itemgetter('id')) if isinstance(value, list) else value
+        return {key: sorted(value, key=lambda x: (x['id'], x.get('type'))) if isinstance(value, list) else value
                 for key, value in payload.items()}
