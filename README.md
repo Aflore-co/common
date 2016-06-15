@@ -36,7 +36,7 @@ section of the Python Packaging User Guide to learn more.
 ## Development
 
 To install into an existing virtual environment, such as when testing new common code in your app, the easiest way to do
-it to [install from a local source tree](https://python-packaging-user-guide.readthedocs.org/en/latest/installing/#installing-from-a-local-src-tree):
+it is to [install from a local source tree](https://python-packaging-user-guide.readthedocs.org/en/latest/installing/#installing-from-a-local-src-tree):
 
     $ pip install -e /path/to/common/on/your/system
 

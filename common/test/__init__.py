@@ -1,7 +1,6 @@
 import unittest
 import json
 import yaml
-import logging
 import importlib
 import http.client
 
@@ -10,6 +9,46 @@ from flask.json import dumps
 from flask.testing import FlaskClient
 from flask.wrappers import Response
 from contextlib import wraps
+
+
+def load_fixtures(app, db, fixtures):
+    """
+    Load one or more fixtures into the database.
+
+    The fixture paths should be relative to the Flask app. The best way to describe it is as being
+    similar in structure to the path used to import a regular Python module in your application: it should
+    have the same root and the same elements, but use slashes instead of periods as delimiters.
+
+     The fixtures YAML should look like this:
+
+        - model: fully.qualified.ModelName
+          records:
+            - id: 1
+              attribute1: value1
+              attribute2: value2
+              attribute3: value3
+            - id: 2
+              attribute1: value1
+              attribute2: value2
+              attribute3: value3
+            ...
+
+    (Some bits of the implementation copied from https://github.com/croach/Flask-Fixtures which sadly does not
+    support Python 3.)
+    """
+
+    for fixture in fixtures:
+        fixture_path = path.join(path.dirname(app.root_path), fixture)
+        app.logger.info('Loading fixture: %s', fixture_path)
+        with open(fixture_path) as f:
+            fixtures = yaml.load(f.read())
+            for fixture in fixtures:
+                module_name, class_name = fixture['model'].rsplit('.', 1)
+                module = importlib.import_module(module_name)
+                model = getattr(module, class_name)
+                for fields in fixture['records']:
+                    db.session.add(model(**fields))
+        db.session.commit()
 
 
 def assert_response_ok(http_method):
@@ -91,90 +130,87 @@ class TestingResponse(Response):
 class BaseFlaskTestCase(unittest.TestCase):
     """
     Base class for Flask and SQLAlchemy tests. This class resets the test database and populates it with any
-    fixture data before every test. It also managed the Flask request context and the associated SQLAlchemy
-    session to mimic the handling of an actual request.
+    fixture data before every test. It also manages the Flask request context and the associated SQLAlchemy session
+    to mimic the handling of an actual request.
+
+    Things should work without a request context too. If you don't want one, override :meth:`.make_request_context()`
+    to return `None`.
+
+    Fixtures are specified using a class-level `fixtures` attribute:
+
+        fixtures = ['path/to/fixtures.yaml']
+
     """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.app = None
+        self.db = None
 
     def setUp(self):
         """
         Configure the Flask app for testing, setup a Flask request context, reset the test database, and
-        load fixture data.
+        load fixture data. Fixtures are specified using a class-level `fixtures` attribute:
+
+            fixtures = ['path/to/fixtures.yaml']
+
         """
 
         assert hasattr(self, 'app'), 'Please provide a reference to the Flask app'
         assert hasattr(self, 'db'), 'Please provide a reference to the Flask SQLAlchemy object'
 
-        self.logger = logging.getLogger(self.__class__.__name__)
-
         # Configure app for testing
         self.app.testing = True
         self.app.response_class = TestingResponse
         self.app.test_client_class = TestingClient
-
-        self.context = self.app.test_request_context()
-        self.context.push()
-
         self.client = self.app.test_client()
 
-        self.create_schema()
-        self.load_fixtures()
+        self.context = self.make_request_context()
+        if self.context is not None:
+            self.context.push()
+
+        try:
+            self.create_schema()
+            load_fixtures(self.app, self.db, getattr(self, 'fixtures', []))
+        except Exception:
+            # Don't leave the database in a bad state if fixture loading or schema creation fail. This avoids
+            # cascading errors that cause all subsequent tests to fail.
+            self.db.session.rollback()
+            raise
+
+    def make_request_context(self):
+        """
+        Override to customize Flask request context. Return None if you don't want one.
+        """
+
+        return self.app.test_request_context()
 
     def create_schema(self):
         """
         Wipe and re-create the test database schema.
         """
 
-        # Sanity check before blowing everything away
-        assert 'test' in self.app.config['SQLALCHEMY_DATABASE_URI'], 'You do not appear to be pointing to a test database'
+        self.assert_is_test_env()
         self.db.drop_all()
         self.db.create_all()
 
-    def load_fixtures(self):
+    def assert_is_test_env(self):
         """
-        Load fixture data specified in the test class. To use, add a class-level attribute:
-
-            fixtures = ['path/to/fixtures.yaml']
-
-        The fixture path should be relative to the Flask app. The best way to describe it is as being
-        similar in structure to the path used to import a regular Python module in your application: it should
-        have the same root and the same elements, but use slashes instead of periods as delimiters.
-
-         The fixtures YAML should look like this:
-
-            - model: fully.qualified.ModelName
-              records:
-                  - id: 1
-                    attribute1: value1
-                    attribute2: value2
-                    attribute3: value3
-                  - id: 2
-                    attribute1: value1
-                    attribute2: value2
-                    attribute3: value3
-                ...
-
-        (Some bits of the implementation copied from https://github.com/croach/Flask-Fixtures
-        which sadly does not support Python 3.)
+        Sanity check before blowing everything away
         """
 
-        for fixture in getattr(self, 'fixtures', []):
-            fixture_path = path.join(path.dirname(self.app.root_path), fixture)
-            self.logger.info('Loading fixture: %s', fixture_path)
-            with open(fixture_path) as f:
-                fixtures = yaml.load(f.read())
-                for fixture in fixtures:
-                    module_name, class_name = fixture['model'].rsplit('.', 1)
-                    module = importlib.import_module(module_name)
-                    model = getattr(module, class_name)
-                    for fields in fixture['records']:
-                        self.db.session.add(model(**fields))
-            self.db.session.commit()
+        db_url = self.app.config['SQLALCHEMY_DATABASE_URI']
+        msg = '{!r} does not appear to be a test database'
+        assert 'test' in db_url, msg.format(db_url)
 
     def tearDown(self):
         """
-        Pop the Flask request context. This emulates the normal flow in a Flask app where the context is
-        popped when the app finishes handling the request. This is very important to do as it also cleans
-        up the SQLAlchemy session.
+        Flush any pending data to the database so that any bad SQL forces an error.
+
+        Shutdown the SQLAlchemy session.
+
+        Pop the (optional) Flask request context. This emulates the normal flow in a Flask app where the context is
+        popped when the app finishes handling the request.
         """
 
         # Flushing leftover SQL to the database at the end of every test catches bugs that manifest themselves only
@@ -190,7 +226,13 @@ class BaseFlaskTestCase(unittest.TestCase):
             # Tearing down all sessions seems drastic, but simply rolling back the current transaction does not
             # terminate all database connections, which can cause the tests to hang.
             self.db.session.close_all()
-            self.context.pop()
+
+            # This de-scopes the SQLAlchemy session. Flask-SQLAlchemy does this when the Flask request context is
+            # popped, but it's convenient to treat them as orthogonal concerns so that this test does not require
+            # a request context.
+            self.db.session.remove()
+            if self.context is not None:
+                self.context.pop()
 
     def assertEntitiesContain(self, actual_entities, expected_entities):
         """
@@ -211,6 +253,7 @@ class BaseFlaskTestCase(unittest.TestCase):
             if not set(actual.items()).issuperset(set(expected.items())):
                 self.fail('Actual does not have everything expected: {actual}, {expected}'.format(actual=actual,
                                                                                                   expected=expected))
+
     def canonicalRepr(self, payload):
         """
         Canonicalize a JSON payload intended to be consumed by Ember Data's Rest or JSONAPI adaptors by sorting
