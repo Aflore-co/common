@@ -260,5 +260,17 @@ class BaseFlaskTestCase(unittest.TestCase):
         top-level lists. This enables comparison of responses with == and leverages pytest's magic introspection.
         """
 
-        return {key: sorted(value, key=lambda x: (x['id'], x.get('type'))) if isinstance(value, list) else value
-                for key, value in payload.items()}
+        return self.removeNone({key: sorted(value, key=lambda x: (x['id'], x.get('type'))) if isinstance(value, list) else value
+                for key, value in payload.items() if value})
+
+    def removeNone(self, obj):
+        """
+        Remove None keys and values from every part of a datastructure
+        """
+        if isinstance(obj, (list, tuple, set)):
+            return type(obj)(self.removeNone(x) for x in obj if x is not None)
+        elif isinstance(obj, dict):
+            return type(obj)((self.removeNone(k), self.removeNone(v))
+                             for k, v in obj.items() if k is not None and v is not None)
+        else:
+            return obj
