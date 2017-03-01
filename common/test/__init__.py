@@ -40,7 +40,7 @@ def load_fixtures(app, db, fixtures):
     for fixture in fixtures:
         fixture_path = path.join(path.dirname(app.root_path), fixture)
         app.logger.info('Loading fixture: %s', fixture_path)
-        with open(fixture_path) as f:
+        with open(fixture_path, encoding='utf-8') as f:
             fixtures = yaml.load(f.read())
             for fixture in fixtures:
                 module_name, class_name = fixture['model'].rsplit('.', 1)
