@@ -1,0 +1,22 @@
+name: Mirror repo to S3
+on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - master
+      - main
+jobs:
+  s3Backup:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: S3 Backup
+        uses: peter-evans/s3-backup@v1.1.0
+        env:
+          ACCESS_KEY_ID: ${{ secrets.AWS_PROD_ACCESS_KEY_ID }}
+          SECRET_ACCESS_KEY: ${{ secrets.AWS_PROD_SECRET_ACCESS_KEY }}
+          MIRROR_TARGET: github-repository-backups/${{ github.event.repository.name }}
+        with:
+          args: --overwrite --remove
